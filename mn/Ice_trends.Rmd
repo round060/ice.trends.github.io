@@ -1,0 +1,264 @@
+---
+title: "Trends in Minnesota Lake Ice"
+author: "Christopher Rounds"
+date: "5/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(mgcv)
+library(gratia)
+library(gamm4)
+library(itsadug)
+library(tidyverse)
+
+duration_spatial <- read.csv("./data/lake/duration_spatial.csv")
+icein_spatial <- read.csv("./data/lake/ice_in_spatial.csv")
+iceout_spatial <- read.csv("./data/lake/ice_out_spatial.csv")
+```
+
+
+
+```{r prep, include=FALSE}
+observations_dur <- duration_spatial %>%
+  filter(year_in > 1947) %>%
+  group_by(DOW) %>%
+  count() %>%
+  dplyr::filter(n >= 10)
+  
+length(unique(observations_dur$DOW))
+sum(observations_dur$n)
+
+duration_model_df <- duration_spatial %>%
+  filter(DOW %in% observations_dur$DOW) %>%
+  filter(year_in > 1950) %>%
+  mutate(DOW = as.factor(DOW),
+         log_acres = log(acres),
+         US_L3NAME = as.factor(US_L3NAME),
+         US_L4NAME = as.factor(US_L4NAME))
+
+
+### select lakes with ice in
+observations_in <- icein_spatial %>%
+  filter(year_in > 1950) %>%
+  group_by(DOW) %>%
+  count() %>%
+  dplyr::filter(n >= 10)
+  
+length(unique(observations_in$DOW))
+sum(observations_in$n)
+
+icein_model_df <- icein_spatial %>%
+  filter(DOW %in% observations_in$DOW) %>%
+  filter(year_in > 1950) %>%
+  mutate(jd_in = ifelse(jd_in < 60, jd_in + 365, jd_in),
+         DOW = as.factor(DOW),
+         log_acres = log(acres),
+         US_L3NAME = as.factor(US_L3NAME),
+         US_L4NAME = as.factor(US_L4NAME))
+
+
+### select lakes with ice out
+observations_out <- iceout_spatial %>%
+  filter(year_out > 1950) %>%
+  group_by(DOW) %>%
+  count() %>%
+  dplyr::filter(n >= 10)
+  
+length(unique(observations_out$DOW))
+sum(observations_out$n)
+
+iceout_model_df <- iceout_spatial %>%
+  filter(DOW %in% observations_out$DOW) %>%
+  filter(year_out > 1950) %>%
+  mutate(DOW = as.factor(DOW),
+         log_acres = log(acres),
+         US_L3NAME = as.factor(US_L3NAME),
+         US_L4NAME = as.factor(US_L4NAME))
+
+remove(observations_out); remove(observations_in); remove(observations_dur)
+```
+
+
+```{r duration, include=FALSE}
+# this is what I have for modeling so far, it takes a while to run 
+# but I have got things set up at a decent point
+'gam_duration <- mgcv::bam(duration ~ US_L3NAME + log_acres + s(max_depth, k = 4) +
+                            s(DOW, bs = "re") +
+                            s(winter_year, k = 4) + 
+                            s(lat, long) +
+                            s(ENSOw) + s(QBOw) + s(SUNw),
+                          data = duration_model_df,
+                          method = "REML",
+                          select = TRUE)
+write_rds(gam_duration, "./data/lake/gam_duration.rds")
+summary(gam_duration)
+draw(gam_duration)
+'
+gam_duration <- readRDS("./data/lake/gam_duration.rds")
+
+deriv_ex <- derivatives(gam_duration, term = "winter_year", interval = "simultaneous", partial_match = TRUE)
+
+year_seq <- seq(from = 1951,
+                to = 2021,
+                by = 1)
+ci_trend <- confint(gam_duration, type = 'simultaneous', parm = "s(winter_year)", 
+                    n = length(year_seq))
+duration_intercept <- gam_duration$coefficients[1]
+```
+
+# Ice Duration
+Lake ice data can be complex and highly variable. Many things impact when lakes freeze and when they thaw. In this modeling effort I have a couple different predictors of lake ice that are thought to be important. The predictor we are mainly focusing on is the year of the record. As climate change has heated the surface of the planet we expect lake ice to occur for a shorter time period, lakes to freeze later and ice to thaw earlier.  
+The model type I am going to use is called a Generalized Additive Mixed Model (GAMM). GAMMs can model nonlinear relationships and can do a good job accounting for the variation between individual lakes (by fitting a random effect for each lake). If you want a more formal introduction to GAMs, [Environmental Computing](https://environmentalcomputing.net/statistics/gams/) has a good tutorial on GAMs.
+
+# Formula for Ice duration
+```{r duration_formula}
+formula.gam(gam_duration)
+```
+
+  The variable US_L3NAME is the ecoregion that the lake is in. Log_acres is the log transformed surface area o the lake in acres. Max_depth is the maximum depth of the lake in meters. DOW is the unique ID for the lake and bs = "re" means we want a random intercept for each lake. Winter_year is the year that the ice melted (so for the winter of 2021-2022 winter_year would be 2022). lat and long represent the center of the lake and this will create a spatial smooth. Finally the last three variables are climatic variables that are taken as averages from October - May.   
+
+# How is Lake Ice Duration Changing Since 1950?
+```{r duration_trends, echo = FALSE}
+
+ggplot(data = ci_trend,
+       aes(x = winter_year, y = est + duration_intercept)) + 
+  geom_hline(yintercept = duration_intercept, col = 'grey') +
+  geom_ribbon(aes(ymin = lower + duration_intercept, ymax = upper + duration_intercept), 
+              alpha = 0.2) + 
+  geom_line() + 
+  scale_y_continuous(name = "Duration of Ice Cover (days)") + 
+  ylab("Year") +
+  theme_classic() + theme(axis.title.x = element_blank())
+
+ggplot(data = deriv_ex,
+       aes(x = data, y = derivative)) + 
+  geom_hline(yintercept = 0, col = 'grey') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) + 
+  geom_line() +
+  scale_y_continuous(name = "Statewide rate of change\n(days/year)") + 
+  xlab("Year") +
+  theme_classic() + theme(axis.title.x = element_blank())
+```
+  
+  If we want to see how a variable impacts the duration of lake ice we can do that! Here is how the maximum depth of a lake is predicted to change the ice duration.  
+  
+```{r max_depth, echo=FALSE}
+draw(gam_duration, select = 2) + xlab("Max depth (m)")
+```
+  
+  We can see as max depth increases, the effect becomes negative. This means that lakes that are deeper are likely to have a shorter ice duration. 
+
+```{r icein, include=FALSE}
+'gam_icein <- mgcv::bam(jd_in ~  US_L3NAME + log_acres + s(max_depth, k = 4) +
+                            s(DOW, bs = "re") +
+                            s(winter_year, k = 4) +
+                            s(shore_mi, k = 4) +
+                            s(lat, long) +
+                            s(ENSOfw) + s(QBOfw) + s(SUNfw), 
+                          data = icein_model_df,
+                          method = "REML",
+                          select = TRUE)
+summary(gam_icein)
+appraise(gam_icein)
+draw(gam_icein)
+write_rds(gam_icein, file = "./data/lake/gam_icein.rds")'
+
+gam_icein <- readRDS("./data/lake/gam_icein.rds")
+
+deriv_ex <- derivatives(gam_icein, term = "winter_year", interval = "simultaneous", partial_match = TRUE)
+
+year_seq <- seq(from = 1951,
+                to = 2021,
+                by = 1)
+ci_trend <- confint(gam_icein, type = 'simultaneous', parm = "s(winter_year)", 
+                    n = length(year_seq))
+duration_intercept <- gam_icein$coefficients[1]
+```
+
+# Formula for Ice-On
+```{r iceon_formula, echo=FALSE}
+formula.gam(gam_icein)
+```
+
+# How is Lake Ice-On Changing Since 1950?
+```{r iceon_trends, echo=FALSE}
+ggplot(data = ci_trend,
+       aes(x = winter_year, y = est + duration_intercept)) + 
+  geom_hline(yintercept = duration_intercept, col = 'grey') +
+  geom_ribbon(aes(ymin = lower + duration_intercept, 
+                  ymax = upper + duration_intercept), alpha = 0.2) + 
+  geom_line() + 
+  scale_y_continuous(name = "Day of Ice-On") + 
+  xlab("Year") +
+  theme_classic() + theme(axis.title.x = element_blank())
+
+ggplot(data = deriv_ex,
+       aes(x = data, y = derivative)) + 
+  geom_hline(yintercept = 0, col = 'grey') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) + 
+  geom_line() +
+  scale_y_continuous(name = "Statewide rate of change\n(days/year)") + 
+  xlab("Year") +
+  theme_classic() + theme(axis.title.x = element_blank())
+```
+
+
+```{r iceout, include = FALSE}
+'gam_iceout <- mgcv::bam(jd_out ~ US_L3NAME + log_acres + s(max_depth, k = 4) +
+                          s(DOW, bs = "re") + 
+                          s(year_out, k = 5) +
+                          s(lat, long) +
+                          s(ENSOw) + s(QBOw) + s(SUNw),
+                          data = iceout_model_df,
+                          method = "REML",
+                          select = TRUE)
+write_rds(gam_iceout, file = "./data/lake/gam_iceout.rds")
+appraise(gam_iceout, method = "simulate") # model diagnostics
+k.check(gam_iceout) # check basis size
+summary(gam_iceout)
+draw(gam_iceout, select = 2)
+acf(residuals(gam_iceout))
+rootogram(gam_iceout) %>% draw()'
+
+gam_iceout <- readRDS("./data/lake/gam_iceout.rds")
+
+deriv_ex <- derivatives(gam_iceout, term = "year_out", interval = "simultaneous", partial_match = TRUE)
+
+year_seq <- seq(from = 1948,
+                to = 2021,
+                by = 1)
+ci_trend <- confint(gam_iceout, type = 'simultaneous', parm = "s(year_out)", 
+                    partial_match = TRUE)
+iceout_intercept <- gam_iceout$coefficients[1]
+```
+
+# Formula for Ice-Off
+```{r iceoff_formula, echo=FALSE}
+formula.gam(gam_icein)
+```
+
+# How is Lake Ice-Off Changing Since 1950?
+```{r iceout_trends, echo = FALSE}
+
+ggplot(data = ci_trend,
+       aes(x = year_out, y = est + iceout_intercept)) + 
+  geom_hline(yintercept = iceout_intercept, col = 'grey') +
+  geom_ribbon(aes(ymin = lower + iceout_intercept, 
+                  ymax = upper + iceout_intercept), alpha = 0.2) + 
+  geom_line() + 
+  scale_y_continuous(name = "Day of Ice-Off") +
+  xlab("Year") +
+  theme_classic() + theme(axis.title.x = element_blank())
+
+ggplot(data = deriv_ex,
+       aes(x = data, y = derivative)) + 
+  geom_hline(yintercept = 0, col = 'grey') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) + 
+  geom_line() +
+  scale_y_continuous(name = "Statewide Rate of Change\n in Ice-Off (days/year)") +
+  xlab("Year") +
+  theme_classic() + theme(axis.title.x = element_blank())
+
+```
+

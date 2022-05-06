@@ -1,0 +1,21 @@
+---
+title: "Your Name"
+---
+
+<div style= "float : left; position : relative; top: 0px; width : 450px; height : 360px; padding-right: 24px; margin-bottom : 0px">
+![Your Photo](./path_to_photo)
+
+</div>
+
+<font size = "4"> 
+*You Bio Here*  
+</font>  
+  
+  
+  
+<font size = "4">
+*Paragraph 2*  
+</font>
+
+>"A quote" - Somebody
+

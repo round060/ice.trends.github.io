@@ -1,0 +1,23 @@
+name: "Ice Trends"
+header-includes: 
+  \usepackage{graphicx}
+  \usepackage{float}
+output_dir: "."
+navbar:
+  title: "Home"
+  right:
+    - text: "Minnesota Ice"
+      menu:
+        - text: "Visualization"
+          href: ./mn/lake_ice_flexdashboard.html
+        - text: "Modeling"
+          href: ./mn/Ice_trends.html
+    - text: "Data"
+      href: data.html
+    - icon: fa-envelope fa-lg
+      href: mailto:<round060@umn.edu>
+    - icon: fa-github fa-lg
+      href: https://github.com/round060/ice.trends.github.io
+output:  
+   html_document:
+    theme: flatly
