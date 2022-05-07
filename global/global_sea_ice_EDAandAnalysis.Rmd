@@ -661,23 +661,26 @@ world <- ne_countries(scale = "medium", returnclass = "sf")
 class(world)
 options(stringsAsFactors = FALSE)
 
-world <- spTransform(world, "+proj=laea +lat_0=-90 +datum=WGS84")
 
 
 #make basic plot of layers
+#difference in ice between jan 1980 and jan 2020
 ggplot() +
-  geom_sf(data = seaice.jan1980, fill = "blue") +
-  geom_sf(data = seaice.jan2020, fill = "purple")
+  geom_sf(data = seaice.jan1980, fill = "#3399FF", show.legend = TRUE) +
+  geom_sf(data = seaice.jan2020, fill = "#9900FF", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Jan 1980" = "#3399FF", "Jan 2020" = "#9900FF"))
 
+#difference in ice between sept 1980 and sept 2020
 ggplot() +
-  geom_sf(data = seaice.sep1980, fill = "red") +
-  geom_sf(data = seaice.sep2020, fill = "green") +
-  geom_sf(data = world)
+  geom_sf(data = seaice.sep1980, fill = "#FF6600", show.legend = TRUE) +
+  geom_sf(data = seaice.sep2020, fill = "#33CC33", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Sept 1980" = "#FF6600", "Sept 2020" = "#33CC33"))
 
+#difference in ice between jan 2020 and sept 2020
 ggplot() +
-  geom_sf(data = world) +
-  geom_sf(data = seaice.jan2020, fill = "brown") +
-  geom_sf(data = seaice.sep2020, fill = "yellow")
+  geom_sf(data = seaice.jan2020, fill = "#996633", show.legend = TRUE) +
+  geom_sf(data = seaice.sep2020, fill = "#FFFF00", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Jan 2020" = "#996633", "Sept 2020" = "#FFFF00"))
 ```
 
 
@@ -690,14 +693,15 @@ class(seaice.jan1980)
 crs(seaice.jan1980)
 extent(seaice.jan1980)
 
+#reproject to WGS84 to fit with basemaps
 seaice.jan1980.WGS84 <- spTransform(seaice.jan1980, CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
 
+#check crs and extent
 crs(seaice.jan1980.WGS84)
 extent(seaice.jan1980.WGS84)
 
+#tidy data for working in ggmap and leaflet
 broom::tidy(seaice.jan1980)
-ggplot() +
-  geom_polygon(data = seaice.jan1980, aes(x = long, y = lat), fill = "blue")
 ```
 
 Make basemap
