@@ -70,7 +70,7 @@ Load in data
 
 ```{r}
 #load in global data set
-globe_ice.df <- read.csv(file = "./data/global_sea_ice_1979-2022.csv", header = TRUE) %>% 
+globe_ice.df <- read.csv(file = "./global/data/global_sea_ice_1979-2022.csv", header = TRUE) %>% 
   as_tibble() %>% 
   rename("global_ice" = "Ice",
          "global_anomaly" = "Anomaly")
@@ -78,7 +78,7 @@ globe_ice.df <- read.csv(file = "./data/global_sea_ice_1979-2022.csv", header = 
 summary(globe_ice.df)
 
 #load in northern hemisphere data set
-nohem_ice.df <- read.csv(file = "./data/nohem_sea_ice_1979-2022.csv", header = TRUE) %>% 
+nohem_ice.df <- read.csv(file = "./global/data/nohem_sea_ice_1979-2022.csv", header = TRUE) %>% 
   as_tibble() %>% 
   rename("nohem_ice" = "Value",
          "nohem_anomaly" = "Anomaly")
@@ -86,7 +86,7 @@ nohem_ice.df <- read.csv(file = "./data/nohem_sea_ice_1979-2022.csv", header = T
 summary(nohem_ice.df)
 
 #load in southern hemisphere data set
-sohem_ice.df <- read.csv(file = "./data/sohem_sea_ice_1979-2022.csv", header = TRUE) %>% 
+sohem_ice.df <- read.csv(file = "./global/data/sohem_sea_ice_1979-2022.csv", header = TRUE) %>% 
   as_tibble() %>% 
   rename("sohem_ice" = "Value",
          "sohem_anomaly" = "Anomaly")
@@ -94,7 +94,7 @@ sohem_ice.df <- read.csv(file = "./data/sohem_sea_ice_1979-2022.csv", header = T
 summary(sohem_ice.df)
 
 #load in hemispheric daily sea ice extent for duration calculations/plots
-nohem_ice_daily.df <- read.csv(file = "./data/N_seaice_extent_daily_v3.0.csv", header = TRUE) %>% 
+nohem_ice_daily.df <- read.csv(file = "./global/data/N_seaice_extent_daily_v3.0.csv", header = TRUE) %>% 
   as_tibble() %>% 
   rename("nohem_extent" = "Extent") %>% 
   mutate(Date = as.Date(Date)) %>% 
@@ -103,7 +103,7 @@ nohem_ice_daily.df <- read.csv(file = "./data/N_seaice_extent_daily_v3.0.csv", h
 
 summary(nohem_ice_daily.df)
 
-sohem_ice_daily.df <- read.csv(file = "./data/S_seaice_extent_daily_v3.0.csv", header = TRUE) %>% 
+sohem_ice_daily.df <- read.csv(file = "./global/data/S_seaice_extent_daily_v3.0.csv", header = TRUE) %>% 
   as_tibble() %>% 
   rename("sohem_extent" = "Extent") %>% 
   mutate(Date = as.Date(Date)) %>% 
@@ -113,7 +113,7 @@ sohem_ice_daily.df <- read.csv(file = "./data/S_seaice_extent_daily_v3.0.csv", h
 summary(sohem_ice_daily.df)
 
 #load in sea level data
-sea_level.df <- read.csv(file = "./data/epa-sea-level.csv", header = TRUE) %>% 
+sea_level.df <- read.csv(file = "./global/data/epa-sea-level.csv", header = TRUE) %>% 
   as_tibble() %>% 
   rename("mean_sea_level" = "CSIRO.Adjusted.Sea.Level",
          "lowerCI_sea_level" = "Lower.Error.Bound",
@@ -122,7 +122,7 @@ sea_level.df <- read.csv(file = "./data/epa-sea-level.csv", header = TRUE) %>%
 summary(sea_level.df)
 
 #load in temp data
-global_temp.df <- read.csv(file = "./data/monthly_globaltemp.csv", header = TRUE) %>% 
+global_temp.df <- read.csv(file = "./global/data/monthly_globaltemp.csv", header = TRUE) %>% 
   as_tibble() %>% 
   arrange(-row_number()) %>%  #reverse row order so earliest years come first, matches sea ice df
   mutate(Date = as.Date(Date) %>% 
@@ -168,24 +168,32 @@ str(total_ice.df)
 total_ice_bar.df <- total_ice.df %>% 
   pivot_longer(cols = ends_with("ice"), #taking from wide to long
                names_to = "ice_type", #category = type of event 
-               values_to = "area") %>%  #measurement = time till event
-  filter(ice_type != "global_hem") %>% 
+               values_to = "extent") %>%  #measurement = time till event
+  filter(ice_type != "global_ice") %>% 
   mutate(ice_type = as.factor(ice_type) %>% 
            fct_recode("Northern" = "nohem_ice",
-                      "Southern" = "sohem_ice"))
+                      "Southern" = "sohem_ice"),
+         text_label    = str_c(ice_type, #add as text aesthetic
+                               "\n", Year, 
+                               "\nSea Ice Extent - ", extent, "million km^2"))
   
 #make ggplotly  
 sea.ice.gg <- total_ice_bar.df %>% 
-  ggplot(aes(x = Date, y = area, fill = ice_type)) +
-  geom_bar(stat = "identity", position = "stack", size = 1.5) +
+  ggplot(aes(x = Date, 
+             y = extent, 
+             fill = ice_type)) +
+  geom_bar(aes(text = text_label), 
+           stat = "identity", 
+           position = "stack", 
+           size = 1.5) +
   scale_y_continuous(limits = c(0,25)) +
   scale_x_date( #The date equiv of scale_x_continuous
     date_breaks = "5 year", #Breaks
     date_minor_breaks = "1 year", #Little lines in between
     date_labels = "%b '%y" #Label for the date,
   ) +
-  xlab("") + ylab("Ice Area (millions km^2)") +
-  scale_fill_manual(values = met.brewer("Hokusai3", direction = 1))
+  xlab("") + ylab("Sea Ice Extent (millions km^2)") +
+  scale_fill_manual("Hemisphere", values = met.brewer("Kandinsky", direction = 1))
   
   
 
@@ -378,7 +386,7 @@ sohem.ice.dur.plotly
 ```
 
 
-Now do the same but for anomaly data
+Now do make plots looking at sea ice anomaly data
 
 ```{r}
 #alter df for anomaly plot
@@ -625,7 +633,7 @@ ice_temp_gis.df %>%
 
 ```{r, include=FALSE}
 #Extract every data file about covid
-ice_file_list <- list.files(path = "./data/Monthly Sea Ice Extent/all_spatial_files/", 
+ice_file_list <- list.files(path = "./global/data/Monthly Sea Ice Extent/all_spatial_files/", 
                             pattern = "[.]shp$", full.names = TRUE)
 
 #check that it worked using gt() table
@@ -639,10 +647,10 @@ Read in a few csvs to get started
 
 ```{r}
 #load shapefiles
-seaice.jan1980 <- st_read("./data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198001_polygon_v3.0.shp")
-seaice.jan2020 <- st_read("./data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202001_polygon_v3.0.shp")
-seaice.sep1980 <- st_read("./data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198009_polygon_v3.0.shp")
-seaice.sep2020 <- st_read("./data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202009_polygon_v3.0.shp")
+seaice.jan1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198001_polygon_v3.0.shp")
+seaice.jan2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202001_polygon_v3.0.shp")
+seaice.sep1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198009_polygon_v3.0.shp")
+seaice.sep2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202009_polygon_v3.0.shp")
 
 
 # seaice.jan1980.transform <- stTransform(seaice.jan1980, CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
