@@ -3,12 +3,12 @@ title: "Your Name"
 ---
 
 <div style= "float : left; position : relative; top: 0px; width : 450px; height : 360px; padding-right: 24px; margin-bottom : 0px">
-![Your Photo](./path_to_photo)
+![Ice Skating in Minnesota](./photos/iceskating.jpg)
 
 </div>
 
 <font size = "4"> 
-*You Bio Here*  
+The period of ice in the winter is an important part of many northern latitude areas. Ice is important culturally as seen by these people ice skating on a lake in Minnesota. Ice is also important in the life history of many cold dwelling species.  For example, Atlantic cod spend much of their life under sea ice and are important prey species for larger birds, fish and mammals. On this website you can find our work to document the effect that climate change has had on both global sea ice and sea ice in the state of Minnesota. 
 </font>  
   
   
