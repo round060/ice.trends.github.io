@@ -566,7 +566,7 @@ Global Sea Ice Trends {style="position:relative;"}
 seaice.plotly
 ```
 
-### <b><font face="Georgia" size="4em" color="#000000">Monthly Sea Ice Anomalies Comments</font></b>
+### <b><font face="Georgia" size="4em" color="#000000">Monthly Sea Ice Extent Comments</font></b>
 From looking at the plotly, we can see how the southern and northern hemisphere sea ice trends are about mirror images of each other. In other words, when northern sea ice is at its lowest, sea ice in the southern hemisphere tends to be close to its peak, and vice versa. However, we can see a slight lag between these opposite trends which can likely be attributed to the tilt of the Earth's axis. Interestingly, we also sea that sea ice has greater seasonal variation in the southern hemishpere than in the northern hemisphere.
 
 ### <b><font face="Georgia" size="6em" color="#000000">Monthly Sea Ice Anomalies</font></b>
