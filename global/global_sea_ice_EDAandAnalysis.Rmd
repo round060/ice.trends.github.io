@@ -67,9 +67,8 @@ options(dplyr.summarise.inform = FALSE)
 ```
 
 
-Load in data
 
-```{r}
+```{r, include=FALSE}
 #load in global data set
 globe_ice.df <- read.csv(file = "./global/data/global_sea_ice_1979-2022.csv", header = TRUE) %>% 
   as_tibble() %>% 
@@ -131,7 +130,7 @@ global_temp.df <- read.csv(file = "./global/data/monthly_globaltemp.csv", header
 ```
 
 
-```{r}
+```{r, include=FALSE}
 #join the three dataframes
 total_ice.df <- inner_join(globe_ice.df, nohem_ice.df,
                            by = c("Date" = "Date",
@@ -153,7 +152,7 @@ total_ice.df <- total_ice.df %>%
   mutate(Date = str_replace_all(string = Date, 
                             pattern = "/", 
                             replacement = "-"))
-
+#change date to date class
 total_ice.df <- total_ice.df %>% 
   mutate(Date = mdy(Date))
   
@@ -163,9 +162,10 @@ summary(total_ice.df)
 str(total_ice.df)
 ```
 
-# Plotting temporal trends in global and hemispheric sea ice change
+# Modeling temporal trends in global and hemispheric sea ice change
 
-```{r}
+```{r, include=FALSE}
+#tidy for making barplot
 total_ice_bar.df <- total_ice.df %>% 
   pivot_longer(cols = ends_with("ice"), #taking from wide to long
                names_to = "ice_type", #category = type of event 
@@ -203,7 +203,8 @@ ggplotly(sea.ice.gg, tooltip = "text") #tooltip controls text hover/label
 ```
 
 
-```{r}
+```{r, include=FALSE}
+#now tidy for line plots in plotly
 total_ice_line.df <- total_ice.df %>% 
   pivot_longer(cols = ends_with("ice"), #taking from wide to long
                names_to = "ice_type", #category = type of event 
@@ -215,9 +216,7 @@ total_ice_line.df <- total_ice.df %>%
 ```
 
 
-Now make in plotly
-
-```{r}
+```{r, include=FALSE}
 #make plotly of sea ice
 seaice.plotly <- plot_ly(total_ice_line.df, x = ~Date, y = ~extent, color = ~ice_type)
 seaice.plotly <- seaice.plotly %>% add_lines()
@@ -260,9 +259,9 @@ seaice.plotly
 ```
 
 
-Let's make some plots looking at annual, as opposed to monthly, shifts in sea ice
 
-```{r}
+```{r, include=FALSE}
+#Let's make some plots looking at annual, as opposed to monthly, shifts in sea ice
 total_ice_year.df <- total_ice_line.df %>% 
   group_by(Year, ice_type) %>% 
   summarize(
@@ -283,9 +282,9 @@ seaice.year.plotly
 ```
 
 
-Not surprisingly, it looks like we have a declining trend in sea ice extent. Let's create some simple linear models to compare trends.
+Since it appears we have a declining trend in sea ice by year, let's make some simple linear models to estimate annual trends in sea ice and predict when sea ice will disappear. Model summaries, residual vs fitted plots, and fitted model plots are all in order from global to northern hemisphere to southern hemisphere.
 
-```{r}
+```{r, echo=FALSE}
 #make global dataset
 global_ice_year.df <- total_ice_year.df %>% 
   filter(ice_type %in% "Global")
@@ -307,6 +306,34 @@ mod3 <- lm(mean_ice_extent ~ Year, data = sohem_ice_year.df)
 summary(mod1)
 summary(mod2)
 summary(mod3)
+
+#check out residuals vs fitted plots
+par(mfrow = c(2,2))
+plot(mod1)
+
+par(mfrow = c(2,2))
+plot(mod2)
+
+par(mfrow = c(2,2))
+plot(mod3)
+
+#global
+global_ice_year.df %>% 
+  ggplot(aes(x = Year,  y = mean_ice_extent)) +
+  stat_smooth(formula = "y ~ x",
+              method = "lm")
+
+#nohem
+nohem_ice_year.df %>% 
+  ggplot(aes(x = Year,  y = mean_ice_extent)) +
+  stat_smooth(formula = "y ~ x",
+              method = "lm")
+
+#sohem
+sohem_ice_year.df %>% 
+  ggplot(aes(x = Year,  y = mean_ice_extent)) +
+  stat_smooth(formula = "y ~ x",
+              method = "lm")
 ```
 
 ## When will sea ice disappear from the earth globally and in each hemisphere?
@@ -315,7 +342,7 @@ Based on these simple linear models, if mean annual sea ice trends continued at 
 
 Let's calculate the duration of sea ice expansion and and recession for each year
 
-```{r}
+```{r, include=FALSE}
 #join both daily data frames
 bothhem_ice_daily.df <- inner_join(nohem_ice_daily.df, sohem_ice_daily.df,
                            by = c("Date" = "Date",
@@ -366,7 +393,7 @@ sohem_ice_duration.df <- bothhem_ice_daily.df %>%
 
 Now make plots showing trends in days if increasing and decreasing ice
 
-```{r}
+```{r, include=FALSE}
 #northern hemisphere plot
 nohem.ice.dur.plotly <- plot_ly(data = nohem_ice_duration.df, x = ~Year, y = ~no_days, color = ~nohem_ice_trend)
 nohem.ice.dur.plotly <- nohem.ice.dur.plotly %>% add_lines()
@@ -387,9 +414,9 @@ sohem.ice.dur.plotly
 ```
 
 
-Now do make plots looking at sea ice anomaly data
+Now make make plots looking at sea ice anomaly data
 
-```{r}
+```{r, include=FALSE}
 #alter df for anomaly plot
 total_ice_anomaly.df <- total_ice.df %>% 
   pivot_longer(cols = ends_with("anomaly"), #taking from wide to long
@@ -441,17 +468,20 @@ iceanomaly.plotly <- iceanomaly.plotly %>% layout(
 iceanomaly.plotly
 ```
 
-It looks like global anomalies in sea ice are mostly driven by the northern hemisphere sea ice as opposed to the southern hemisphere. Let's rtun some simple linear models to check it out.
+It looks like global anomalies in sea ice are mostly driven by the northern hemisphere sea ice as opposed to the southern hemisphere. Let's run some simple linear models to check it out. Summaries, resid vs. fitted, and best fit model plots shown as southern hemisphere first, then northern hemisphere.
 
-
-```{r}
+```{r, echo=FALSE}
 #global anomaly vs southern hemisphere
 mod4 <- lm(global_anomaly ~ sohem_anomaly, data = total_ice.df)
 summary(mod4)
+par(mfrow = c(2,2))
+plot(mod4)
 
 #global anomaly vs northern hemisphere
 mod5 <- lm(global_anomaly ~ nohem_anomaly, data = total_ice.df)
 summary(mod5)
+par(mfrow = c(2,2))
+plot(mod5)
 
 #plots of both models above
 #sohem
@@ -467,11 +497,11 @@ total_ice.df %>%
               method = "lm")
 ```
 
-As expected from an earlier visual assessment of anomaly data, the model with northern hemisphere anomaly explains 64.3% of variation in global anomaly data, relative to only 28% explained by the southern hemisphere anomalies.
+As expected from an earlier visual assessment of anomaly data, the model with northern hemisphere anomaly explains 64.3% of variation in global anomaly data, relative to only 28% explained by the southern hemisphere anomalies. Also, based on the residuals vs. fitted plot for the southern hemishpere anomaly, it might be better to explore some nonlinear options for model fitting and to satisfy model assumptions (equal variance and normality in the residuals). But for the sake of this project, we'll keep it simple
 
 # Modeling relationship between sea ice change and sea level rise
 
-```{r}
+```{r, include=FALSE}
 #prep sea ice df for comparison with sea level data
 total_ice_march.df <- total_ice.df %>% 
   filter(Month == 3) %>% #only use ice data from March, matches collectiion of annual sea level data
@@ -512,11 +542,11 @@ sea_levelandice.df %>%
 
 ```
 
+Let's look at modeling the effect of global sea ice on global sea level
 
-
-```{r}
+```{r, echo=FALSE}
 #construct simple linear regression models
-mod6 <- lm(mean_sea_level ~ global_ice, data = sea_levelandice.df)
+mod6 <- lm(mean_sea_level ~ global_ice + poly(global_ice, 2), data = sea_levelandice.df)
 mod7 <- lm(mean_sea_level ~ global_ice_change + poly(global_ice_change, 2), data = sea_levelandice.df)
 
 #model summary
@@ -543,9 +573,11 @@ sea_levelandice.df %>%
 ```
 
 
+Suprisingly, aside from a significant quadratic effect of change in sea ice extent on global sea level change, we don't see and significant effects of sea ice extent on global sea level change, something I did not expect. What might work better in the future is to instead calculate the mean rate of change from year to year (difference in mean global temperature) instead of this running total. Doing so may show different trends.
+
 # Monthly sea ice and temperature
 
-```{r}
+```{r, include=FALSE}
 #convert date to month year to match temperature data
 total_ice_yearmon.df <- total_ice.df %>% 
   mutate(Date = as.yearmon(Date))
@@ -600,8 +632,9 @@ ice_temp_gis.df %>%
         legend.key = element_rect(fill = "white"))                   
 ```
 
+Let's construct some linear models comparing global temperature change with global sea level.
 
-```{r}
+```{r, echo=FALSE}
 #construct simple linear regression models
 mod8 <- lm(global_ice ~ Mean, data = ice_temp_gis.df)
 mod9 <- lm(global_anomaly ~ Mean, data = ice_temp_gis.df)
@@ -629,8 +662,11 @@ ice_temp_gis.df %>%
               method = "lm")
 ```
 
+From the Q-Q plot, we can see that the residuals do not meet the assumption of being normally distributed in the model comparing temperature with sea ice extent. This suggests we should try alternative models, likely nonlinear, but for the sake of this project, we will not. However, we do see in the case of sea ice anomalies, a much stronger linear trend between global temperature and global sea ice anomalies, indication that increasing temperature is causing more significant (greater magnitude) monthly declines in sea ice extent.
 
 # Spatial plots of sea ice
+
+No linear models developed for this stage, just spatial plots
 
 ```{r, include=FALSE}
 #Extract every data file about covid
@@ -644,9 +680,7 @@ tibble(
 ```
 
 
-Read in a few csvs to get started
-
-```{r}
+```{r, include=FALSE}
 #load shapefiles
 #northern hemisphere
 Nseaice.mar1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198003_polygon_v3.0.shp")
@@ -704,7 +738,7 @@ ggplot() +
 ```
 
 
-```{r}
+```{r, include=FALSE}
 #load shapefile
 seaice.jan1980 <- readOGR("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198001_polygon_v3.0.shp")
 
@@ -724,9 +758,8 @@ extent(seaice.jan1980.WGS84)
 broom::tidy(seaice.jan1980)
 ```
 
-Make basemap
 
-```{r}
+```{r, include=FALSE}
 #manual bounding box
 seaice.box <- matrix(c(-180, 180, 38.01, 83.67),
                      ncol  = 2,
@@ -745,7 +778,7 @@ seaice_base.map <- get_map(
 ```
 
 
-```{r}
+```{r, include=FALSE}
 ggmap(seaice_base.map) +
   geom_polygon(data = seaice.jan1980.WGS84, aes(x = long, y = lat)) +
   coord_map(projection = "orthographic")
