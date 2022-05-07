@@ -31,7 +31,8 @@ library(zoo)
 library(rgdal)
 library(raster)
 library(rgeos)
-options(stringsAsFactors = FALSE)
+library(rnaturalearth)
+library(rnaturalearthdata)
 
 
 #Working directory for .RMD
@@ -655,6 +656,14 @@ seaice.sep2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_file
 
 # seaice.jan1980.transform <- stTransform(seaice.jan1980, CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
 
+#basemap
+world <- ne_countries(scale = "medium", returnclass = "sf")
+class(world)
+options(stringsAsFactors = FALSE)
+
+world <- spTransform(world, "+proj=laea +lat_0=-90 +datum=WGS84")
+
+
 #make basic plot of layers
 ggplot() +
   geom_sf(data = seaice.jan1980, fill = "blue") +
@@ -662,9 +671,11 @@ ggplot() +
 
 ggplot() +
   geom_sf(data = seaice.sep1980, fill = "red") +
-  geom_sf(data = seaice.sep2020, fill = "green")
+  geom_sf(data = seaice.sep2020, fill = "green") +
+  geom_sf(data = world)
 
 ggplot() +
+  geom_sf(data = world) +
   geom_sf(data = seaice.jan2020, fill = "brown") +
   geom_sf(data = seaice.sep2020, fill = "yellow")
 ```
@@ -672,7 +683,7 @@ ggplot() +
 
 ```{r}
 #load shapefile
-seaice.jan1980 <- readOGR("./data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198001_polygon_v3.0.shp")
+seaice.jan1980 <- readOGR("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198001_polygon_v3.0.shp")
 
 #check class and crs
 class(seaice.jan1980)
@@ -684,7 +695,9 @@ seaice.jan1980.WGS84 <- spTransform(seaice.jan1980, CRS("+proj=longlat +datum=WG
 crs(seaice.jan1980.WGS84)
 extent(seaice.jan1980.WGS84)
 
-broom::tidy(seaice.jan1980.WGS84)
+broom::tidy(seaice.jan1980)
+ggplot() +
+  geom_polygon(data = seaice.jan1980, aes(x = long, y = lat), fill = "blue")
 ```
 
 Make basemap
@@ -710,7 +723,8 @@ seaice_base.map <- get_map(
 
 ```{r}
 ggmap(seaice_base.map) +
-  geom_polygon(data = seaice.jan1980.WGS84, aes(x = long, y = lat))
+  geom_polygon(data = seaice.jan1980.WGS84, aes(x = long, y = lat)) +
+  coord_map(projection = "orthographic")
 
 leaflet(data = seaice.jan1980.WGS84) %>% 
   addProviderTiles("CartoDB.Positron") %>% 
