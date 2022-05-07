@@ -3,7 +3,7 @@ On this repository you will find the files and website that were built for the f
 
 This project focused on analyzed global sea ice and Minnesota lake ice trends through space and time.
 
-On the main page, there is an indes file, site yaml, and data file that were used to construct components of the website. 
+On the main page, there is an index file, site yaml, and data file that were used to construct components of the website. 
 
 In the global folder, you will find markdown and html files used for all of our global sea ice data analyses and our flex dashboard that was produced.
 
