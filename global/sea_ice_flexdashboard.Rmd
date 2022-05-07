@@ -497,6 +497,36 @@ iceanom_temp.gg <- ice_temp_gis.df %>%
 ```
 
 
+```{r, spatial sea ice, include=FALSE}
+#load shapefiles
+seaice.jan1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198001_polygon_v3.0.shp")
+seaice.jan2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202001_polygon_v3.0.shp")
+seaice.sep1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198009_polygon_v3.0.shp")
+seaice.sep2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202009_polygon_v3.0.shp")
+
+
+#make basic plot of layers
+#difference in ice between jan 1980 and jan 2020
+spatice.jan80jan20.gg <- ggplot() +
+  geom_sf(data = seaice.jan1980, fill = "#3399FF", show.legend = TRUE) +
+  geom_sf(data = seaice.jan2020, fill = "#9900FF", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Jan 1980" = "#3399FF", "Jan 2020" = "#9900FF"))
+
+#difference in ice between sept 1980 and sept 2020
+spatice.sep80sep20.gg <- ggplot() +
+  geom_sf(data = seaice.sep1980, fill = "#FF6600", show.legend = TRUE) +
+  geom_sf(data = seaice.sep2020, fill = "#33CC33", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Sept 1980" = "#FF6600", "Sept 2020" = "#33CC33"))
+
+#difference in ice between jan 2020 and sept 2020
+spatice.jan20sep20.gg <- ggplot() +
+  geom_sf(data = seaice.jan2020, fill = "#996633", show.legend = TRUE) +
+  geom_sf(data = seaice.sep2020, fill = "#FFFF00", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Jan 2020" = "#996633", "Sept 2020" = "#FFFF00"))
+```
+
+
+
 Global Sea Ice Trends {style="position:relative;"}
 ========================================================
 
@@ -574,9 +604,6 @@ ice_temp.gg
 iceanom_temp.gg
 ```
 
-### <b><font face="Georgia" size="4em" color="#000000">Sea Ice and Temperature Comments</font></b>
-This plot shows the significant effect that even a small decline in global sea ice has with a rise in global sea level. While their are certainly other effects at play that contribute to a rise in sea level, such as global temperature, it's interesting nonetheless. It's important to note that because of data obtained, this plot represents sea ice and levels during the month of March.
-
 ### <b><font face="Georgia" size="6em" color="#000000">Global Sea Ice and Sea Level</font></b>
 
 ```{r fig.width=10, fig.height=8, echo=FALSE}
@@ -584,27 +611,27 @@ iceandlevel.gg
 ```
 
 ### <b><font face="Georgia" size="4em" color="#000000">Global Sea Ice and Sea Level Comments</font></b>
-This plot shows the significant effect that even a small decline in global sea ice has with a rise in global sea level. While their are certainly other effects at play that contribute to a rise in sea level, such as global temperature, it's interesting nonetheless. It's important to note that because of data obtained, this plot represents sea ice and levels during the month of March.
+This plot shows very little association between global sea ice and temperature. However, we constructed a nonlinear model and found a small but significcant effect of sea ice on temperature, with sea level decreasingly slightly with increasing sea ice. It's important to note that because of data obtained, this plot represents sea ice and levels during the month of March.
 
 Spatial Trends in Sea Ice {style="position:relative;"}
 ========================================================
 
-### <b><font face="Georgia" size="6em" color="#000000">Spatial Trend in Sea Ice</font></b>
+### <b><font face="Georgia" size="6em" color="#000000">Northern Sea Ice: January 1980 - January 2020</font></b>
 
-```{r fig.width=10, fig.height=8, echo=FALSE}
-
+```{r fig.width=6, fig.height=8, echo=FALSE}
+spatice.jan80jan20.gg
 ```
 
-### <b><font face="Georgia" size="6em" color="#000000">Spatial Scatterplot of Mean Ice-On</font></b>
+### <b><font face="Georgia" size="6em" color="#000000">Northern Sea Ice: September 1980 - September 2020</font></b>
 
-```{r fig.width=10, fig.height=8, echo=FALSE}
-
+```{r fig.width=6, fig.height=8, echo=FALSE}
+spatice.sep80sep20.gg
 ```
 
-### <b><font face="Georgia" size="6em" color="#000000">Trends of Ice-Off</font></b>
+### <b><font face="Georgia" size="6em" color="#000000">Northern Sea Ice: January 2020 - September 2020</font></b>
 
-```{r fig.width=10, fig.height=8, echo=FALSE}
-
+```{r fig.width=6, fig.height=8, echo=FALSE}
+spatice.jan20sep20.gg
 ```
 
 ### <b><font face="Georgia" size="6em" color="#000000">Modeled Trends in Minnesota Ice-Off</font></b>
