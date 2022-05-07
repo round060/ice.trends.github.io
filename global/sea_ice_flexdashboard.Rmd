@@ -1,0 +1,611 @@
+---
+title: "Flex dashboard"
+author: ""
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: scroll
+---
+
+<style type="text/css"> .sidebar { overflow: auto; } </style>
+
+<style type="text/css">
+  body{
+  font-size: 12pt;
+}
+</style>
+```{r setup, include = FALSE}
+library(tidyverse)
+library(lubridate)
+library(gt)
+library(paletteer)
+library(ggridges)
+library(plotly)
+library(sf)
+library(ggmap)
+library(tidycensus)
+library(leaflet)
+library(osmdata)
+library(tigris)
+library(ggsflabel)
+library(ggthemes)
+library(flexdashboard)
+library(scales)
+library(MetBrewer)
+library(zoo)
+library(rgdal)
+library(raster)
+library(rgeos)
+options(stringsAsFactors = FALSE)
+
+
+#Working directory for .RMD
+knitr::opts_knit$set(echo = TRUE,
+                     root.dir = rprojroot::find_rstudio_root_file())
+
+#Controlling figure output in markdown
+knitr::opts_chunk$set(
+#  fig.height =   
+  fig.width = 6,
+#  fig.asp = .5,
+  out.width = "90%",
+#  out.height = 
+ fig.align  = "center",
+  cache = FALSE,
+  eval  = TRUE,
+  echo  = TRUE,
+  warning = FALSE
+)
+
+#My Colours (from viridis)
+my_purple <- "#440154FF"
+my_yellow <- "#FDE725FF"
+
+#Set Theme for ggplot2
+theme_set(theme_bw() + theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom"))
+
+#Set Scientific notation output and decimal places for knitr
+options(scipen = 999)
+options(digits = 4)
+options(dplyr.summarise.inform = FALSE)
+```
+
+
+```{r, loading data, include=FALSE}
+#load in global data set
+globe_ice.df <- read.csv(file = "./global/data/global_sea_ice_1979-2022.csv", header = TRUE) %>% 
+  as_tibble() %>% 
+  rename("global_ice" = "Ice",
+         "global_anomaly" = "Anomaly")
+
+summary(globe_ice.df)
+
+#load in northern hemisphere data set
+nohem_ice.df <- read.csv(file = "./global/data/nohem_sea_ice_1979-2022.csv", header = TRUE) %>% 
+  as_tibble() %>% 
+  rename("nohem_ice" = "Value",
+         "nohem_anomaly" = "Anomaly")
+
+summary(nohem_ice.df)
+
+#load in southern hemisphere data set
+sohem_ice.df <- read.csv(file = "./global/data/sohem_sea_ice_1979-2022.csv", header = TRUE) %>% 
+  as_tibble() %>% 
+  rename("sohem_ice" = "Value",
+         "sohem_anomaly" = "Anomaly")
+
+summary(sohem_ice.df)
+
+#load in hemispheric daily sea ice extent for duration calculations/plots
+nohem_ice_daily.df <- read.csv(file = "./global/data/N_seaice_extent_daily_v3.0.csv", header = TRUE) %>% 
+  as_tibble() %>% 
+  rename("nohem_extent" = "Extent") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  filter(!Date < "1988-12-31" & Year != 2022)  #remove up to last day of 1987, years prior sampled every other day, need last day for lag calculation, also remove 2022 since incomplete data
+  
+
+summary(nohem_ice_daily.df)
+
+sohem_ice_daily.df <- read.csv(file = "./global/data/S_seaice_extent_daily_v3.0.csv", header = TRUE) %>% 
+  as_tibble() %>% 
+  rename("sohem_extent" = "Extent") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  filter(!Date < "1988-12-31") %>%  #remove up to last day of 1987, years prior sampled every other day, need last day for lag calculation
+  filter(!Date < "1988-12-31" & Year != 2022)  #remove up to last day of 1987, years prior sampled every other day, need last day for lag calculation, also remove 2022 since incomplete data
+
+summary(sohem_ice_daily.df)
+
+#load in sea level data
+sea_level.df <- read.csv(file = "./global/data/epa-sea-level.csv", header = TRUE) %>% 
+  as_tibble() %>% 
+  rename("mean_sea_level" = "CSIRO.Adjusted.Sea.Level",
+         "lowerCI_sea_level" = "Lower.Error.Bound",
+         "upperCI_sea_level" = "Upper.Error.Bound")
+
+summary(sea_level.df)
+
+#load in temp data
+global_temp.df <- read.csv(file = "./global/data/monthly_globaltemp.csv", header = TRUE) %>% 
+  as_tibble() %>% 
+  arrange(-row_number()) %>%  #reverse row order so earliest years come first, matches sea ice df
+  mutate(Date = as.Date(Date) %>% 
+           as.yearmon()) #change to month year format
+```
+
+
+```{r, joining data, include=FALSE}
+#join the three dataframes
+total_ice.df <- inner_join(globe_ice.df, nohem_ice.df,
+                           by = c("Date" = "Date",
+                                  "Date2" = "Date2",
+                                  "Year" = "Year",
+                                  "Month" = "Month")) 
+
+total_ice.df <- inner_join(total_ice.df, sohem_ice.df,
+                           by = c("Date" = "Date",
+                                  "Date2" = "Date2",
+                                  "Year" = "Year",
+                                  "Month" = "Month"))
+
+#tidy up data
+total_ice.df <- total_ice.df %>% 
+  filter(global_ice != -9999) %>% #remove rows with -9999 (no value)
+  dplyr::select(!Date) %>% 
+  rename(Date = Date2) %>% 
+  mutate(Date = str_replace_all(string = Date, 
+                            pattern = "/", 
+                            replacement = "-"))
+
+total_ice.df <- total_ice.df %>% 
+  mutate(Date = mdy(Date))
+  
+
+#check how summary looks now
+summary(total_ice.df)
+str(total_ice.df)
+```
+
+
+```{r, barplot, include=FALSE}
+total_ice_bar.df <- total_ice.df %>% 
+  pivot_longer(cols = ends_with("ice"), #taking from wide to long
+               names_to = "ice_type", #category = type of event 
+               values_to = "extent") %>%  #measurement = time till event
+  filter(ice_type != "global_ice") %>% 
+  mutate(ice_type = as.factor(ice_type) %>% 
+           fct_recode("Northern" = "nohem_ice",
+                      "Southern" = "sohem_ice"),
+         text_label    = str_c(ice_type, #add as text aesthetic
+                               "\n", Year, 
+                               "\nSea Ice Extent - ", extent, "million km^2"))
+  
+#make ggplotly  
+sea.ice.gg <- total_ice_bar.df %>% 
+  ggplot(aes(x = Date, 
+             y = extent, 
+             fill = ice_type)) +
+  geom_bar(aes(text = text_label), 
+           stat = "identity", 
+           position = "stack", 
+           size = 1.5) +
+  scale_y_continuous(limits = c(0,25)) +
+  scale_x_date( #The date equiv of scale_x_continuous
+    date_breaks = "5 year", #Breaks
+    date_minor_breaks = "1 year", #Little lines in between
+    date_labels = "%b '%y" #Label for the date,
+  ) +
+  xlab("") + ylab("Sea Ice Extent (millions km^2)") +
+  scale_fill_manual("Hemisphere", values = met.brewer("Kandinsky", direction = 1))
+  
+  
+
+#ggplotly() + tooltip to control label
+ggplotly(sea.ice.gg, tooltip = "text") #tooltip controls text hover/label
+```
+
+
+
+```{r, seaicemonthly, include=FALSE}
+#create tidy data for producing line plotly of sea ice trends
+total_ice_line.df <- total_ice.df %>% 
+  pivot_longer(cols = ends_with("ice"), #taking from wide to long
+               names_to = "ice_type", #category = scope of ice measurement
+               values_to = "extent") %>%  #measurement = extent
+  mutate(ice_type = as.factor(ice_type) %>% 
+           fct_recode("Global" = "global_ice",
+                      "Northern" = "nohem_ice",
+                      "Southern" = "sohem_ice"))
+
+#now make plotly of sea ice
+seaice.plotly <- plot_ly(total_ice_line.df, x = ~Date, y = ~extent, color = ~ice_type)
+seaice.plotly <- seaice.plotly %>% add_lines()
+seaice.plotly <- seaice.plotly %>% layout(
+    xaxis = list(
+      rangeselector = list(
+        buttons = list(
+          list(
+            count = 6,
+            label = "6 mo",
+            step = "month",
+            stepmode = "backward"),
+          list(
+            count = 1,
+            label = "1 yr",
+            step = "year",
+            stepmode = "backward"),
+          list(
+          count = 5,
+            label = "5 yr",
+            step = "year",
+            stepmode = "backward"),
+          list(
+          count = 10,
+            label = "10 yr",
+            step = "year",
+            stepmode = "backward"),
+          list(
+            count = 1,
+            label = "YTD",
+            step = "year",
+            stepmode = "todate"),
+          list(step = "all"))),
+
+      rangeslider = list(type = "date")),
+    
+    yaxis = list(title = "Sea Ice Extent (millions km^2)"))
+
+seaice.plotly
+```
+
+
+```{r, annualseaice, include=FALSE}
+total_ice_year.df <- total_ice_line.df %>% 
+  group_by(Year, ice_type) %>% 
+  summarize(
+    mean_ice_extent = mean(extent)
+  ) %>% 
+  ungroup() %>% 
+  filter(Year != 2022) #remove last year since incomplete, throws off annual mean
+
+#now plot
+seaice.year.plotly <- plot_ly(data = total_ice_year.df, x = ~Year, y = ~mean_ice_extent, color = ~ice_type)
+seaice.year.plotly <- seaice.year.plotly %>% add_lines()
+seaice.year.plotly <- seaice.year.plotly %>% layout(
+  xaxis = list("Year"),
+  yaxis = list(title = "Sea Ice Extent (millions km^2)"))
+
+seaice.year.plotly
+```
+
+
+```{r, anomalyplot, include=FALSE}
+#alter df for anomaly plot
+total_ice_anomaly.df <- total_ice.df %>% 
+  pivot_longer(cols = ends_with("anomaly"), #taking from wide to long
+               names_to = "ice_type", #category = type of event 
+               values_to = "anomaly") %>%  #measurement = time till event
+  mutate(ice_type = as.factor(ice_type) %>% 
+           fct_recode("Global" = "global_anomaly",
+                      "Northern" = "nohem_anomaly",
+                      "Southern" = "sohem_anomaly"))
+
+#make plotly of sea ice anomaly values
+iceanomaly.plotly <- plot_ly(total_ice_anomaly.df, x = ~Date, y = ~anomaly, color = ~ice_type)
+iceanomaly.plotly <- iceanomaly.plotly %>% add_lines()
+iceanomaly.plotly <- iceanomaly.plotly %>% layout(
+    xaxis = list(
+      rangeselector = list(
+        buttons = list(
+          list(
+            count = 6,
+            label = "6 mo",
+            step = "month",
+            stepmode = "backward"),
+          list(
+            count = 1,
+            label = "1 yr",
+            step = "year",
+            stepmode = "backward"),
+          list(
+          count = 5,
+            label = "5 yr",
+            step = "year",
+            stepmode = "backward"),
+          list(
+          count = 10,
+            label = "10 yr",
+            step = "year",
+            stepmode = "backward"),
+          list(
+            count = 1,
+            label = "YTD",
+            step = "year",
+            stepmode = "todate"),
+          list(step = "all"))),
+
+      rangeslider = list(type = "date")),
+    
+    yaxis = list(title = "Sea Ice Anomalies"))
+
+iceanomaly.plotly
+```
+
+
+```{r, include=FALSE}
+#join both daily data frames
+bothhem_ice_daily.df <- inner_join(nohem_ice_daily.df, sohem_ice_daily.df,
+                           by = c("Date" = "Date",
+                                  "Year" = "Year",
+                                  "Month" = "Month",
+                                  "Day" = "Day"))
+
+#for northern hemisphere
+bothhem_ice_daily.df <- bothhem_ice_daily.df %>% 
+  mutate(nohem_ice_diff = nohem_extent - lag(nohem_extent),
+         sohem_ice_diff = sohem_extent - lag(sohem_extent),
+         nohem_ice_trend = case_when(
+           nohem_ice_diff > 0 ~ "increasing",
+           nohem_ice_diff %in% 0 ~ "no change",
+           nohem_ice_diff < 0 ~ "decreasing"),
+         sohem_ice_trend = case_when(
+           sohem_ice_diff > 0 ~ "increasing",
+           sohem_ice_diff %in% 0 ~ "no change",
+           sohem_ice_diff < 0 ~ "decreasing")
+  ) %>% 
+  na.omit()
+  
+  
+summary(bothhem_ice_daily.df)
+
+#now summarize number of increasing and decreasing days for each year
+#northern hemisphere
+nohem_ice_duration.df <- bothhem_ice_daily.df %>% 
+  group_by(Year, nohem_ice_trend) %>% 
+  summarise(
+    no_days = length(nohem_ice_trend)
+  ) %>% 
+  mutate(nohem_ice_trend = as.factor(nohem_ice_trend)) %>% 
+  ungroup()
+
+
+#southern hemisphere
+sohem_ice_duration.df <- bothhem_ice_daily.df %>% 
+  group_by(Year, sohem_ice_trend) %>% 
+  summarise(
+    no_days = length(sohem_ice_trend) 
+  ) %>% 
+  mutate(sohem_ice_trend = as.factor(sohem_ice_trend)) %>% 
+  ungroup()
+```
+
+
+```{r, include=FALSE}
+#northern hemisphere plot
+nohem.ice.dur.plotly <- plot_ly(data = nohem_ice_duration.df, x = ~Year, y = ~no_days, color = ~nohem_ice_trend)
+nohem.ice.dur.plotly <- nohem.ice.dur.plotly %>% add_lines()
+nohem.ice.dur.plotly <- nohem.ice.dur.plotly %>% layout(
+  xaxis = list("Year"),
+  yaxis = list(title = "No. of Days"))
+
+nohem.ice.dur.plotly
+
+#southern hemisphere plot
+sohem.ice.dur.plotly <- plot_ly(data = sohem_ice_duration.df, x = ~Year, y = ~no_days, color = ~sohem_ice_trend)
+sohem.ice.dur.plotly <- sohem.ice.dur.plotly %>% add_lines()
+sohem.ice.dur.plotly <- sohem.ice.dur.plotly %>% layout(
+  xaxis = list("Year"),
+  yaxis = list(title = "No. of Days"))
+
+sohem.ice.dur.plotly
+```
+
+
+```{r, ice and sea level, include=FALSE}
+#prep sea ice df for comparison with sea level data
+total_ice_march.df <- total_ice.df %>% 
+  filter(Month == 3) %>% #only use ice data from March, matches collectiion of annual sea level data
+  dplyr::select(Year, global_ice, global_anomaly) %>% 
+  mutate(global_ice_change = global_ice - lag(global_ice)) %>% #create annual change variable
+  filter(Year != 1979) #remove first year with missing change value
+
+#remove Date column
+sea_level.df <- sea_level.df %>% 
+  dplyr::select(!Date)
+
+#join dataframes
+sea_levelandice.df <- inner_join(total_ice_march.df, sea_level.df,
+                                 by = ("Year" = "Year"))
+
+#check out summary
+summary(sea_levelandice.df)
+
+#manual colors for legend
+colors_icelevel <- c("Global Sea Level" = "#3399FF", "Global Sea Ice" = "#993399")
+
+#plot sea ice and level together
+iceandlevel.gg <- sea_levelandice.df %>% 
+  ggplot(aes(x = Year)) +
+  geom_line(aes(y = global_ice, color = "Global Sea Ice")) +
+  geom_line(aes(y = mean_sea_level*3, color = "Global Sea Level")) +
+  geom_ribbon(aes(ymin = lowerCI_sea_level*3, ymax = upperCI_sea_level*3), fill = "#99CCFF", alpha = 0.25) +
+  #add themes to clean up graph
+  scale_y_continuous(
+    # Features of the first axis
+    name = "Global Sea Ice Extent (millions km^2)",
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(trans = ~./3, name = "Mean Global Sea Level Change (in)")) +
+  scale_color_manual("", #manual legend
+                     values = colors_icelevel) + #set of colors matched with plot type
+  theme(legend.position = "bottom",
+        legend.key = element_rect(fill = "white"))
+```
+
+
+```{r, ice and temp, include=FALSE}
+#convert date to month year to match temperature data
+total_ice_yearmon.df <- total_ice.df %>% 
+  mutate(Date = as.yearmon(Date))
+
+#split  temp df into two dfsbased on source
+global_temp_gis.df <- global_temp.df %>% 
+  filter(Source %in% "GISTEMP")
+
+global_temp_gcag.df <- global_temp.df %>% 
+  filter(Source %in% "GCAG")
+
+#join dataframes
+ice_temp_gis.df <- inner_join(total_ice_yearmon.df, global_temp_gis.df,
+                          by = ("Date" = "Date")) 
+
+ice_temp_gcag.df <- inner_join(total_ice_yearmon.df, global_temp_gcag.df,
+                          by = ("Date" = "Date"))
+
+#manual colors for legend
+colors_icetemp <- c("Global Temperature" = "#3399FF", "Global Sea Ice" = "#993399")
+
+#plot sea ice and level together
+ice_temp.gg <- ice_temp_gis.df %>% 
+  ggplot(aes(x = Date)) +
+  geom_line(aes(y = global_ice, color = "Global Sea Ice")) +
+  geom_line(aes(y = Mean*25, color = "Global Temperature")) +
+  #add themes to clean up graph
+  scale_y_continuous(
+    # Features of the first axis
+    name = "Global Sea Ice Extent (millions km^2)",
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(trans = ~./25, name = "Mean Global Temp Change (degrees Celsius)")) +
+  scale_color_manual("", #manual legend
+                     values = colors_icetemp) + #set of colors matched with plot type
+  theme(legend.position = "bottom",
+        legend.key = element_rect(fill = "white"))
+
+ #plot sea ice and level together
+iceanom_temp.gg <- ice_temp_gis.df %>% 
+  ggplot(aes(x = Date)) +
+  geom_line(aes(y = global_anomaly, color = "Global Sea Ice")) +
+  geom_line(aes(y = Mean*3, color = "Global Temperature")) +
+  #add themes to clean up graph
+  scale_y_continuous(
+    # Features of the first axis
+    name = "Global Sea Ice Anomalies",
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(trans = ~./3, name = "Mean Global Temp Change (degrees Celsius)")) +
+  scale_color_manual("", #manual legend
+                     values = colors_icetemp) + #set of colors matched with plot type
+  theme(legend.position = "bottom",
+        legend.key = element_rect(fill = "white")) 
+```
+
+
+Global Sea Ice Trends {style="position:relative;"}
+========================================================
+
+### <b><font face="Georgia" size="4em" color="#000000">About Sea Ice Data</font></b>
+  The sea ice data you can find here is collected every day by the National Snow and Ice Data Center (NSIDC). Sea ice extent is divided into the northern and southern hemispheres, and a global measurement which is just the total of both hemispheres. It's measured as the total area (in millions of square kilometers) that sea ice covers. Anomaly values are based on how different an ice measurement is on a given date compared with the long-term average for that same day. Positve values indicate more ice than normal, and negative values indicate less ice than normal. The farther a value is from 0, the less normal it is.
+  
+### <b><font face="Georgia" size="6em" color="#000000">Monthly Sea Ice Extent</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+seaice.plotly
+```
+
+### <b><font face="Georgia" size="6em" color="#000000">Monthly Sea Ice Anomalies</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+iceanomaly.plotly
+```
+
+### <b><font face="Georgia" size="4em" color="#000000">Monthly Sea Ice Anomalies Comments</font></b>
+From looking at the anomaly plot, it seems like global anomalies are mostly driven by changes in the northern hemisphere. Based on simple linear models, this rings true, as anomalies in the northern hemisphere explain ~64% of variation in global anomalies, while the southern hemisphere anomalies only explains around 28% of global variation> This makes sense when we look at the annual trends in sea ice extent, where global ice extent is mostly driven by declining sea ice in the northern hemisphere.
+
+### <b><font face="Georgia" size="6em" color="#000000">Annual Trends in Sea Ice Extent</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+seaice.year.plotly
+```
+
+### <b><font face="Georgia" size="4em" color="#000000">Annual Trends in Sea Ice Comments</font></b>
+This plot shows the average sea ice extent for each year. Based on simple linear regression models, global sea ice decreased on average by ~49,000 square kilometers each year from 1979-2021. Sea ice on the northern hemisphere decreased on average by ~54,000 square kilometers. Based on these trends, if mean annual sea ice trends continued at the same rate as they have since 1979, we would predict that sea ice on average will disappear from the northern hemisphere by the year 2210, and globally / in the southern hemisphere, by the year 2468.
+
+### <b><font face="Georgia" size="6em" color="#000000">Barplot of Hemishperic Sea Ice</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+ggplotly(sea.ice.gg, tooltip = "text") #tooltip controls text hover/label
+```
+
+### <b><font face="Georgia" size="4em" color="#000000">Barplot of Hemishperic Sea Ice Comments</font></b>
+This plot shows the same data as the first plot, but using stacked bars instead for easier monthly comparison of southern and northern hemisphere sea ice extent.
+
+
+Sea Ice Duration  {style="position:relative;"}
+========================================================
+
+### <b><font face="Georgia" size="6em" color="#000000">Annual Duration of Expanding and Receding Sea Ice</font></b>
+Surprisingly, unlike Minnesota lakes, the duration of sea ice expansion and recession in either the northern or southern hemisphere hasn't really changed over the last 30 years. However, even though durations haven't changed, we've shown from other plots that sea ice is expanding less and receding more when it does happen.
+
+### <b><font face="Georgia" size="6em" color="#000000">Northern Hemisphere Sea Ice Durations</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+nohem.ice.dur.plotly
+```
+
+### <b><font face="Georgia" size="6em" color="#000000">Southern Hemisphere Sea Ice Durations</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+sohem.ice.dur.plotly
+```
+
+
+Sea Ice, Temperature, and Sea Level  {style="position:relative;"}
+========================================================
+
+### <b><font face="Georgia" size="6em" color="#000000">Relationship between Sea Ice and Temperature</font></b>
+These two temperature plots show the significant effect that global mean temperature change has had on the extent of global sea icem and, even more, on the presence of anomalies in global sea ice.
+
+### <b><font face="Georgia" size="6em" color="#000000">Global Sea Ice Extent and Temperature</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+ice_temp.gg
+```
+
+### <b><font face="Georgia" size="6em" color="#000000">Global Sea Ice Anomalies and Temperature</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+iceanom_temp.gg
+```
+
+### <b><font face="Georgia" size="4em" color="#000000">Sea Ice and Temperature Comments</font></b>
+This plot shows the significant effect that even a small decline in global sea ice has with a rise in global sea level. While their are certainly other effects at play that contribute to a rise in sea level, such as global temperature, it's interesting nonetheless. It's important to note that because of data obtained, this plot represents sea ice and levels during the month of March.
+
+### <b><font face="Georgia" size="6em" color="#000000">Global Sea Ice and Sea Level</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+iceandlevel.gg
+```
+
+### <b><font face="Georgia" size="4em" color="#000000">Global Sea Ice and Sea Level Comments</font></b>
+This plot shows the significant effect that even a small decline in global sea ice has with a rise in global sea level. While their are certainly other effects at play that contribute to a rise in sea level, such as global temperature, it's interesting nonetheless. It's important to note that because of data obtained, this plot represents sea ice and levels during the month of March.
+
+Spatial Trends in Sea Ice {style="position:relative;"}
+========================================================
+
+### <b><font face="Georgia" size="6em" color="#000000">Spatial Trend in Sea Ice</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+
+```
+
+### <b><font face="Georgia" size="6em" color="#000000">Spatial Scatterplot of Mean Ice-On</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+
+```
+
+### <b><font face="Georgia" size="6em" color="#000000">Trends of Ice-Off</font></b>
+
+```{r fig.width=10, fig.height=8, echo=FALSE}
+
+```
+
+### <b><font face="Georgia" size="6em" color="#000000">Modeled Trends in Minnesota Ice-Off</font></b>
+
