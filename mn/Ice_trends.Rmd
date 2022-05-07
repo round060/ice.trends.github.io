@@ -112,7 +112,7 @@ Lake ice data can be complex and highly variable. Many things impact when lakes 
 The model type I am going to use is called a Generalized Additive Mixed Model (GAMM). GAMMs can model nonlinear relationships and can do a good job accounting for the variation between individual lakes (by fitting a random effect for each lake). If you want a more formal introduction to GAMs, [Environmental Computing](https://environmentalcomputing.net/statistics/gams/) has a good tutorial on GAMs.
 
 # Formula for Ice duration
-```{r duration_formula}
+```{r duration_formula, echo=FALSE}
 formula.gam(gam_duration)
 ```
 
@@ -148,7 +148,8 @@ ggplot(data = deriv_ex,
   If we want to see how a variable impacts the duration of lake ice we can do that! Here is how the maximum depth of a lake is predicted to change the ice duration.  
   
 ```{r max_depth, echo=FALSE}
-draw(gam_duration, select = 2) + xlab("Max depth (m)")
+draw(gam_duration, select = 2) + xlab("Max depth (m)") + 
+  labs(title = "Effect of Lake Max Depth on Ice Duration")
 ```
   
   We can see as max depth increases, the effect becomes negative. This means that lakes that are deeper are likely to have a shorter ice duration. 
@@ -185,6 +186,16 @@ duration_intercept <- gam_icein$coefficients[1]
 formula.gam(gam_icein)
 ```
 
+  This is very similar to the equation for ice duration, the only difference is that I took the average of the climate variables from October - December and made their name end in fw.
+  
+# Effect of Max-Depth on Lake Ice-On
+```{r iceon_maxdepth, echo=FALSE}
+draw(gam_icein, select = 1) + xlab("Max depth (m)") + 
+  labs(title = "Effect of Lake Max Depth on Ice-On")
+```
+
+  This should make sense. As lakes are bigger they likely have a larger area, are absorbing more sunlight through the summer which takes a longer time to cool off in the winter. This is partially why really big lakes, like Lake Superior, never completely freeze.
+
 # How is Lake Ice-On Changing Since 1950?
 ```{r iceon_trends, echo=FALSE}
 ggplot(data = ci_trend,
@@ -193,7 +204,8 @@ ggplot(data = ci_trend,
   geom_ribbon(aes(ymin = lower + duration_intercept, 
                   ymax = upper + duration_intercept), alpha = 0.2) + 
   geom_line() + 
-
+  labs(title = "Red line Indicates Statewide Mean Ice-On",
+         subtitle = " Grey ribbon is the 95% Confidence Interval") +
   scale_y_continuous(name = "Day of Ice-On") + 
   xlab("Year") +
   theme_classic() + theme(axis.title.x = element_blank())
@@ -247,6 +259,15 @@ iceout_intercept <- gam_iceout$coefficients[1]
 formula.gam(gam_icein)
 ```
 
+# Effect of Max-Depth on Lake Ice-Off
+```{r iceoff_maxdepth, echo=FALSE}
+draw(gam_iceout, select = 1) + xlab("Max depth (m)") + 
+  labs(title = "Effect of Lake Max Depth on Ice-Off")
+```
+
+
+  This plot is showing that as max depth increases, the ice-off date for a lake should also get later. That is to say, lakes that are deeper keep their ice on for longer. 
+   
 # How is Lake Ice-Off Changing Since 1950?
 ```{r iceout_trends, echo = FALSE}
 
@@ -256,7 +277,7 @@ ggplot(data = ci_trend,
   geom_ribbon(aes(ymin = lower + iceout_intercept, 
                   ymax = upper + iceout_intercept), alpha = 0.2) + 
   geom_line() + 
-    labs(title = "Red line Indicates Statewide Mean Ice-Off",
+  labs(title = "Red line Indicates Statewide Mean Ice-Off",
          subtitle = " Grey ribbon is the 95% Confidence Interval") + 
   scale_y_continuous(name = "Day of Ice-Off") +
   xlab("Year") +
