@@ -648,39 +648,59 @@ Read in a few csvs to get started
 
 ```{r}
 #load shapefiles
-seaice.jan1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198001_polygon_v3.0.shp")
-seaice.jan2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202001_polygon_v3.0.shp")
-seaice.sep1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198009_polygon_v3.0.shp")
-seaice.sep2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202009_polygon_v3.0.shp")
+#northern hemisphere
+Nseaice.mar1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198003_polygon_v3.0.shp")
+Nseaice.mar2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202003_polygon_v3.0.shp")
+Nseaice.sep1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_198009_polygon_v3.0.shp")
+Nseaice.sep2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_N_202009_polygon_v3.0.shp")
 
-
-# seaice.jan1980.transform <- stTransform(seaice.jan1980, CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
-
-#basemap
-world <- ne_countries(scale = "medium", returnclass = "sf")
-class(world)
-options(stringsAsFactors = FALSE)
-
-
+#southern hemisphere
+Sseaice.mar1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_S_198003_polygon_v3.0.shp")
+Sseaice.mar2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_S_202003_polygon_v3.0.shp")
+Sseaice.sep1980 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_S_198009_polygon_v3.0.shp")
+Sseaice.sep2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_files/extent_S_202009_polygon_v3.0.shp")
 
 #make basic plot of layers
-#difference in ice between jan 1980 and jan 2020
-ggplot() +
-  geom_sf(data = seaice.jan1980, fill = "#3399FF", show.legend = TRUE) +
-  geom_sf(data = seaice.jan2020, fill = "#9900FF", show.legend = TRUE) +
-  scale_fill_manual("Sea Ice Extent", values = c("Jan 1980" = "#3399FF", "Jan 2020" = "#9900FF"))
+#northern hemisphere
+#difference in ice between mar 1980 and mar 2020
+ ggplot() +
+  geom_sf(data = Nseaice.mar1980, fill = "#3399FF", show.legend = TRUE) +
+  geom_sf(data = Nseaice.mar2020, fill = "#9900FF", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Mar 1980" = "#3399FF", "Mar 2020" = "#9900FF"))
+
+
 
 #difference in ice between sept 1980 and sept 2020
 ggplot() +
-  geom_sf(data = seaice.sep1980, fill = "#FF6600", show.legend = TRUE) +
-  geom_sf(data = seaice.sep2020, fill = "#33CC33", show.legend = TRUE) +
+  geom_sf(data = Nseaice.sep1980, fill = "#FF6600", show.legend = TRUE) +
+  geom_sf(data = Nseaice.sep2020, fill = "#33CC33", show.legend = TRUE) +
   scale_fill_manual("Sea Ice Extent", values = c("Sept 1980" = "#FF6600", "Sept 2020" = "#33CC33"))
 
-#difference in ice between jan 2020 and sept 2020
+#difference in ice between mar 2020 and sept 2020
 ggplot() +
-  geom_sf(data = seaice.jan2020, fill = "#996633", show.legend = TRUE) +
-  geom_sf(data = seaice.sep2020, fill = "#FFFF00", show.legend = TRUE) +
-  scale_fill_manual("Sea Ice Extent", values = c("Jan 2020" = "#996633", "Sept 2020" = "#FFFF00"))
+  geom_sf(data = Nseaice.mar2020, fill = "#996633", show.legend = TRUE) +
+  geom_sf(data = Nseaice.sep2020, fill = "#FFFF00", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Mar 2020" = "#996633", "Sept 2020" = "#FFFF00"))
+
+
+#outhern hemisphere
+#difference in ice between mar 1980 and mar 2020
+ggplot() +
+  geom_sf(data = Sseaice.mar1980, fill = "#3399FF", show.legend = TRUE) +
+  geom_sf(data = Sseaice.mar2020, fill = "#9900FF", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Mar 1980" = "#3399FF", "Mar 2020" = "#9900FF"))
+
+#difference in ice between sept 1980 and sept 2020
+ggplot() +
+  geom_sf(data = Sseaice.sep1980, fill = "#FF6600", show.legend = TRUE) +
+  geom_sf(data = Sseaice.sep2020, fill = "#33CC33", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Sept 1980" = "#FF6600", "Sept 2020" = "#33CC33"))
+
+#difference in ice between mar 2020 and sept 2020
+ggplot() +
+  geom_sf(data = Sseaice.sep2020, fill = "#FFFF00", show.legend = TRUE) +
+  geom_sf(data = Sseaice.mar2020, fill = "#996633", show.legend = TRUE) +
+  scale_fill_manual("Sea Ice Extent", values = c("Mar 2020" = "#996633", "Sept 2020" = "#FFFF00"))
 ```
 
 
