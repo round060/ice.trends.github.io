@@ -6,9 +6,15 @@ output_dir: "."
 navbar:
   title: "Home"
   right:
+    - text: "Global Sea Ice"
+      menu:
+        - text: "Global Visualization"
+          href: ./global/sea_ice_flexdashboard.html
+        - text: "Data and Modeling"
+          href: ./global/global_sea_ice_EDAandAnalysis.html
     - text: "Minnesota Ice"
       menu:
-        - text: "Visualization"
+        - text: "Minnesota Visualization"
           href: ./mn/lake_ice_flexdashboard.html
         - text: "Modeling"
           href: ./mn/Ice_trends.html
