@@ -129,8 +129,8 @@ ggplot(data = ci_trend,
   geom_line() + 
   scale_y_continuous(name = "Duration of Ice Cover (days)") + 
   ylab("Year") + 
-  labs(subtitle = "Red line Indicates Statewide Mean Ice-Off
-       Grey ribbon is the 95% Confidence Interval") + 
+  labs(title = "Red line Indicates Statewide Mean Ice-Off",
+       subtitle = "Grey ribbon is the 95% Confidence Interval") + 
   theme_classic() + theme(axis.title.x = element_blank())
 
 ggplot(data = deriv_ex,
@@ -210,6 +210,7 @@ ggplot(data = deriv_ex,
   theme_classic() + theme(axis.title.x = element_blank())
 ```
 
+  This plot is pretty strange to me because there is a steep decrease in day of ice-on (ice-on is getting later) from 1950-1970. Then around 1975, the day of ice-on starts to increase and become later in the year. I am really not sure whats driving the initial decrease in day of ice-on.  
 
 ```{r iceout, include = FALSE}
 'gam_iceout <- mgcv::bam(jd_out ~ US_L3NAME + log_acres + s(max_depth, k = 4) +
@@ -240,7 +241,6 @@ ci_trend <- confint(gam_iceout, type = 'simultaneous', parm = "s(year_out)",
 iceout_intercept <- gam_iceout$coefficients[1]
 ```
   
-  This plot is pretty strange to me because there is a steep decrease in day of ice-on (ice-on is getting later) from 1950-1970. Then around 1975 the day of ice-on starts to increase and become later in the year. I am really not sure whats driving the initial decrease in day of ice-on.  
   
 # Formula for Ice-Off
 ```{r iceoff_formula, echo=FALSE}
@@ -256,8 +256,8 @@ ggplot(data = ci_trend,
   geom_ribbon(aes(ymin = lower + iceout_intercept, 
                   ymax = upper + iceout_intercept), alpha = 0.2) + 
   geom_line() + 
-    labs(subtitle = "Red line Indicates Statewide Mean Ice-Off
-       Grey ribbon is the 95% Confidence Interval") + 
+    labs(title = "Red line Indicates Statewide Mean Ice-Off",
+         subtitle = " Grey ribbon is the 95% Confidence Interval") + 
   scale_y_continuous(name = "Day of Ice-Off") +
   xlab("Year") +
   theme_classic() + theme(axis.title.x = element_blank())
@@ -275,4 +275,5 @@ ggplot(data = deriv_ex,
 
 ```
 
-  These first ice-off plot is pretty easy to tell whats happening. The ice-off data is clearly getting earlier as the year increases. in this plot you can tell why a GAMM may be a suitable modeling technique due to the nonlinearity of the trend.
+  These first ice-off plot is pretty easy to tell whats happening. The ice-off data is clearly getting earlier as the year increases. in this plot you can tell why a GAMM may be a suitable modeling technique due to the non linearity of the trend.
+  
