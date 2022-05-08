@@ -515,41 +515,35 @@ Sseaice.sep2020 <- st_read("./global/data/Monthly Sea Ice Extent/all_spatial_fil
 #northern hemisphere
 #difference in ice between mar 1980 and mar 2020
 Nspatice.mar80mar20.gg <- ggplot() +
-  geom_sf(data = Nseaice.mar1980, fill = "#3399FF", show.legend = TRUE) +
-  geom_sf(data = Nseaice.mar2020, fill = "#9900FF", show.legend = TRUE) +
-  scale_fill_manual("Sea Ice Extent", values = c("Mar 1980" = "#3399FF", "Mar 2020" = "#9900FF"))
+  geom_sf(data = Nseaice.mar1980, fill = "#3399FF") +
+  geom_sf(data = Nseaice.mar2020, fill = "#9900FF")
 
 #difference in ice between sept 1980 and sept 2020
 Nspatice.sep80sep20.gg <- ggplot() +
-  geom_sf(data = Nseaice.sep1980, fill = "#FF6600", show.legend = TRUE) +
-  geom_sf(data = Nseaice.sep2020, fill = "#33CC33", show.legend = TRUE) +
-  scale_fill_manual("Sea Ice Extent", values = c("Sept 1980" = "#FF6600", "Sept 2020" = "#33CC33"))
+  geom_sf(data = Nseaice.sep1980, fill = "#FF6600") +
+  geom_sf(data = Nseaice.sep2020, fill = "#33CC33")
 
 #difference in ice between mar 2020 and sept 2020
 Nspatice.mar20sep20.gg <- ggplot() +
-  geom_sf(data = Nseaice.mar2020, fill = "#996633", show.legend = TRUE) +
-  geom_sf(data = Nseaice.sep2020, fill = "#FFFF00", show.legend = TRUE) +
-  scale_fill_manual("Sea Ice Extent", values = c("Mar 2020" = "#996633", "Sept 2020" = "#FFFF00"))
+  geom_sf(data = Nseaice.mar2020, fill = "#996633") +
+  geom_sf(data = Nseaice.sep2020, fill = "#FFFF00")
 
 
 #outhern hemisphere
 #difference in ice between mar 1980 and mar 2020
 Sspatice.mar80mar20.gg <- ggplot() +
-  geom_sf(data = Sseaice.mar1980, fill = "#3399FF", show.legend = TRUE) +
-  geom_sf(data = Sseaice.mar2020, fill = "#9900FF", show.legend = TRUE) +
-  scale_fill_manual("Sea Ice Extent", values = c("Mar 1980" = "#3399FF", "Mar 2020" = "#9900FF"))
+  geom_sf(data = Sseaice.mar1980, fill = "#3399FF") +
+  geom_sf(data = Sseaice.mar2020, fill = "#9900FF")
 
 #difference in ice between sept 1980 and sept 2020
 Sspatice.sep80sep20.gg <- ggplot() +
-  geom_sf(data = Sseaice.sep1980, fill = "#FF6600", show.legend = TRUE) +
-  geom_sf(data = Sseaice.sep2020, fill = "#33CC33", show.legend = TRUE) +
-  scale_fill_manual("Sea Ice Extent", values = c("Sept 1980" = "#FF6600", "Sept 2020" = "#33CC33"))
+  geom_sf(data = Sseaice.sep1980, fill = "#FF6600") +
+  geom_sf(data = Sseaice.sep2020, fill = "#33CC33")
 
 #difference in ice between mar 2020 and sept 2020
 Sspatice.mar20sep20.gg <- ggplot() +
-  geom_sf(data = Sseaice.sep2020, fill = "#FFFF00", show.legend = TRUE) +
-  geom_sf(data = Sseaice.mar2020, fill = "#996633", show.legend = TRUE) +
-  scale_fill_manual("Sea Ice Extent", values = c("Mar 2020" = "#996633", "Sept 2020" = "#FFFF00"))
+  geom_sf(data = Sseaice.sep2020, fill = "#FFFF00") +
+  geom_sf(data = Sseaice.mar2020, fill = "#996633")
 ```
 
 
@@ -646,16 +640,23 @@ This plot shows very little association between global sea ice and temperature. 
 Spatial Trends in Sea Ice {style="position:relative;"}
 ========================================================
 
+This tab shows the variation in sea ice extent on both the northern (top panels) and southern hemisphere (bottom panels) over time. The first column shows how sea ice varies in March in each hemisphere from 1980 to 2020 to demostrate changes over the last 40 years. As we see, there are some losses in sea ice over time but it doesn't appear to be major at this time of year for either hemisphere. However, when we shift to the second column and look at ice trends from 1980 to 2020 during the month of September, we see a different story. 
+
+In the northern hemisphere, sea ice looks to be cut in half over this forty year stretch, while the southern hemisphere still doesn't appear to decline very much, which explains the trends we saw in annual sea ice extent plot and linear model results, where the northern hemisphere sea ice was significantly declining but there was no significant decline in the southern hemisphere. 
+
+Interestingly, when we shift to our final column, which looks at see ice differences between March 2020 and September 2020, we can see how variable sea ice is on a seasonal scale. This roughly depicts how sea ice changes at its maximum and minimum extent in each hemisphere. Of course, these exhibit inverse trends, with sea ice in the northern hemisphere reaching its greatest extent in March, and then its lowest in September, while in the southern hemisphere, sea ice roughly reaches its greatest extent in September and its lowest in March. This column shows that see ice in both hemispheres declines and increases dramatically (> 50%) every six months.
+
+
 Row
 -------------------------------------
 
-### <b><font face="Georgia" size="6em" color="#000000">Northern Sea Ice: March 1980 - March 2020</font></b>
+### <b><font face="Georgia" size="4em" color="#000000">Northern Sea Ice: March 1980 (blue) - March 2020 (purple)</font></b>
 
 ```{r fig.width=6, fig.height=8, echo=FALSE}
 Nspatice.mar80mar20.gg
 ```
 
-### <b><font face="Georgia" size="6em" color="#000000">Southern Sea Ice: March 1980 - March 2020</font></b>
+### <b><font face="Georgia" size="4em" color="#000000">Southern Sea Ice: March 1980 (blue) - March 2020 (purple)</font></b>
 
 ```{r fig.width=6, fig.height=8, echo=FALSE}
 Sspatice.mar80mar20.gg
@@ -664,13 +665,13 @@ Sspatice.mar80mar20.gg
 Row
 -------------------------------------
 
-### <b><font face="Georgia" size="6em" color="#000000">Northern Sea Ice: September 1980 - September 2020</font></b>
+### <b><font face="Georgia" size="4em" color="#000000">Northern Sea Ice: September 1980 (orange) - September 2020 (green)</font></b>
 
 ```{r fig.width=6, fig.height=8, echo=FALSE}
 Nspatice.sep80sep20.gg 
 ```
 
-### <b><font face="Georgia" size="6em" color="#000000">Southern Sea Ice: September 1980 - September 2020</font></b>
+### <b><font face="Georgia" size="4em" color="#000000">Southern Sea Ice: September 1980 (orange) - September 2020 (green)</font></b>
 
 ```{r fig.width=6, fig.height=8, echo=FALSE}
 Sspatice.sep80sep20.gg
@@ -679,13 +680,13 @@ Sspatice.sep80sep20.gg
 Row
 -------------------------------------
 
-### <b><font face="Georgia" size="6em" color="#000000">Northern Sea Ice: March 2020 - September 2020</font></b>
+### <b><font face="Georgia" size="4em" color="#000000">Northern Sea Ice: March 2020 (brown) - September 2020 (yellow)</font></b>
 
 ```{r fig.width=6, fig.height=8, echo=FALSE}
 Nspatice.mar20sep20.gg 
 ```
 
-### <b><font face="Georgia" size="6em" color="#000000">Southern Sea Ice: March 2020 - September 2020</font></b>
+### <b><font face="Georgia" size="4em" color="#000000">Southern Sea Ice: March 2020 (brown) - September 2020 (yellow)</font></b>
 
 ```{r fig.width=6, fig.height=8, echo=FALSE}
 Sspatice.mar20sep20.gg
