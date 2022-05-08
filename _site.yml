@@ -18,6 +18,8 @@ navbar:
           href: ./mn/lake_ice_flexdashboard.html
         - text: "Modeling"
           href: ./mn/Ice_trends.html
+        - text: "Interpolating"
+          href: ./mn/lake_idw_flexdashboard.html
     - text: "Data"
       href: data.html
     - icon: fa-envelope fa-lg
