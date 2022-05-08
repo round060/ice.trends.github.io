@@ -10,7 +10,7 @@ navbar:
       menu:
         - text: "Global Visualization"
           href: ./global/sea_ice_flexdashboard.html
-        - text: "Data and Modeling"
+        - text: "Modeling"
           href: ./global/global_sea_ice_EDAandAnalysis.html
     - text: "Minnesota Ice"
       menu:
