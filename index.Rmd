@@ -3,7 +3,7 @@ title: "On Thin Ice: Trends in Minnesota Lake and Global Sea Ice"
 author: "Audrey Hyke, Christopher Rounds and Jack Rabe"
 ---
 
-<div style= "float : left; position : relative; top: 0px; width : 450px; height : 360px; padding-right: 24px; margin-bottom : 0px">
+<div style= "float : left; position : relative; top: 50px; width : 450px; height : 400px; padding-right: 24px; margin-bottom : 0px">
 ![Ice Skating in Minnesota](./photos/iceskating.jpg)
 
 </div>
