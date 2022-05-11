@@ -56,7 +56,7 @@ options(dplyr.summarise.inform = FALSE)
 
 ```{r durationclean, include = FALSE}
 # Duration Data
-duration_spatial <- read.csv("./data/lake/duration_spatial.csv")
+duration_spatial <- read.csv("./mn/data/lake/duration_spatial.csv")
 
 #Create Duration histogram
 duration_histo <- duration_spatial %>%
@@ -142,7 +142,7 @@ duration_lm <- duration_model %>%
 
 ```{r iceinclean, include = FALSE}
 # read Ice-In data
-icein_spatial <- read.csv("./data/lake/ice_in_spatial.csv")
+icein_spatial <- read.csv("./mn/data/lake/ice_in_spatial.csv")
 icein_spatial <- icein_spatial %>%
   mutate(date_in = as.Date(date_in),
          jd_in = ifelse(jd_in < 60, jd_in + 365, jd_in))
@@ -229,7 +229,7 @@ icein_lm <- iceon_model %>%
 
 ```{r iceoffclean, include=FALSE}
 #read data
-iceoff_spatial <- read.csv("./data/lake/ice_out_spatial.csv")
+iceoff_spatial <- read.csv("./mn/data/lake/ice_out_spatial.csv")
 
 #create histogram of ice-off data
 iceoff_histo <- iceoff_spatial %>%
@@ -342,7 +342,7 @@ This plot does a nice job of showing the lake to lake variability. There are lak
 ### <b><font face="Georgia" size="6em" color="#000000">Modeled Trends in Minnesota Ice Duration</font></b>
 
 ```{r modeled_duration, fig.width=10, fig.height=8, echo=FALSE}
-gam_duration <- readRDS("./data/lake/gam_duration.rds")
+gam_duration <- readRDS("./mn/data/lake/gam_duration.rds")
 
 year_seq <- seq(from = 1948,
                 to = 2021,
@@ -369,7 +369,8 @@ ggplot(data = ci_trend,
 ```
 
 ### <b><font face="Georgia" size="4em" color="#000000">Modeled Trends Comments</font></b>
-The way I would interpret this plot is by starting at the line on the left side. The ice duration from around 1950-1970 is around 140-145 days per year. Starting at 1970, ice duration begins to decrease rapidly. The timing of when ice duration starts to decrease also corresponds when we start to see an increase in air temperature due to climate change. The decrease is fairly steady throughout this time and by 2020 the ice duration has decreased to about 130 days per year. 
+The way I would interpret this plot is by starting at the line on the left side. The ice duration from around 1950-1970 is around 140-145 days per year. Starting at 1970, ice duration begins to decrease rapidly. The timing of when ice duration starts to decrease also corresponds when we start to see an increase in air temperature due to climate change. The decrease is fairly steady throughout this time and by 2020 the ice duration has decreased to about 130 days per year.
+
 
 Ice-On {style="position:relative;"}
 ========================================================
@@ -398,7 +399,7 @@ Once again this plot really illustrates the variability of lake ice. There is a 
 ### <b><font face="Georgia" size="6em" color="#000000">Modeled Trends in Minnesota Ice-On</font></b>
 
 ```{r, modeled_iceon, fig.width=10, fig.height=8, echo=FALSE}
-gam_icein <- readRDS("./data/lake/gam_icein.rds")
+gam_icein <- readRDS("./mn/data/lake/gam_icein.rds")
 
 year_seq <- seq(from = 1948,
                 to = 2021,
@@ -448,7 +449,7 @@ iceoff_lm
 ### <b><font face="Georgia" size="6em" color="#000000">Modeled Trends in Minnesota Ice-Off</font></b>
 
 ```{r, modeled_iceout, fig.width=10, fig.height=8, echo=FALSE}
-gam_iceout <- readRDS("./data/lake/gam_iceout.rds")
+gam_iceout <- readRDS("./mn/data/lake/gam_iceout.rds")
 
 year_seq <- seq(from = 1948,
                 to = 2021,
